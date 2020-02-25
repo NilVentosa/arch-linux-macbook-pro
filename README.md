@@ -31,6 +31,19 @@ This is probably not necessary, but you can run `efivar -l` to display the EFI v
 |sda2|100G|8300|root|
 |sda3|12G |8200|swap|
 
+Now you can run `lsblk` to make sure it is all good and continue with mounting the partitions:
+* `mkfs.vfat -F32 /dev/sda1`
+* `mkfs.ext4 /dev/sda2`
+* `mkswap /dev/sda3`
+* `swapon /dev/sda3`
+* `mount /dev/sda2 /mnt`
+* `mkdir -p /mnt/boot`
+* `mount /dev/sda1 /mnt/boot`
+* `genfstab -U -p /mnt >> /mnt/etc/fstab`
+Now we will edit the file (`vim /mnt/etc/fstab`) to make sure the line of the ext4 partition ends with a "2", the line with the swap ends with a "0" and the line with the boot partition ends with a "1". This will configure partition checking on boot. Also ext4 partition options:
+* rw,relatime,data=ordered,discard
+
+
 ## Links
 Of course when I did this I checked multiple other guides, some of them are:
 
