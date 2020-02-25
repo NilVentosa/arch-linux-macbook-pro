@@ -40,8 +40,9 @@ Now you can run `lsblk` to make sure it is all good and continue with mounting t
 * `mkdir -p /mnt/boot`
 * `mount /dev/sda1 /mnt/boot`
 * `genfstab -U -p /mnt >> /mnt/etc/fstab`
+
 Now we will edit the file (`vim /mnt/etc/fstab`) to make sure the line of the ext4 partition ends with a "2", the line with the swap ends with a "0" and the line with the boot partition ends with a "1". This will configure partition checking on boot. Also ext4 partition options:
-* rw,relatime,data=ordered,discard
+> rw,relatime,data=ordered,discard
 
 
 ## Links
