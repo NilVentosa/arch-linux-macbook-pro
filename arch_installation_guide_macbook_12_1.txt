@@ -1,0 +1,139 @@
+INSTALL ARCH MACBOOKPRO 12,1
+	helps
+		https://medium.com/@philpl/arch-linux-running-on-my-macbook-2ea525ebefe3
+		https://github.com/badgumby/arch-macbook-air
+	Turn on pressing Alt key
+	Select image from USB and press e
+	Add "nomodeset" so the whole screen can be seen
+	loadkeys es --> Loads spanish keyboard
+	setfont sun12x22 --> Sets a bigger font
+	cgdisk /dev/sda --> Delete all partitions
+	lsblk --> Make sure they have been correctly deleted
+	reboot --> Press alt at boot and see only USB option is there, select and "nomodeset" again
+	efivar -l --> Displays EFI variables, to make sure we are in EFI mode
+	cgdisk /dev/sda --> Create partitions
+		sda1	1G		ef00	boot
+		sda2	100G	8300	root
+		sda3	12G		8200	swap
+	lsblk --> Make sure all good
+	mkfs.vfat -F32 /dev/sda1
+	mkfs.ext4 /dev/sda2
+	mkswap /dev/sda3
+	swapon /dev/sda3
+	mount /dev/sda2 /mnt
+	mkdir -p /mnt/boot
+	mount /dev/sda1 /mnt/boot
+	pacstrap /mnt base linux linux-firmware vim git
+	genfstab -U -p /mnt >> /mnt/etc/fstab
+	vim /mnt/etc/fstab
+	Make sure that the line of the ext4 partition ends with a “2”, the swap partition’s line ends with a “0”, and the boot partition’s line ends with a “1”. This configures the partition checking on boot.
+	ext4 partition options = rw,relatime,data=ordered,discard
+	arch-chroot /mnt
+	vim /etc/locale.gen --> Uncomment en_US.UTF-8
+	locale-gen
+	echo LANG=en_US.UTF-8 > /etc/locale.conf
+	export LANG=en_US.UTF-8
+
+
+	echo KEYMAP=es > /etc/vconsole.conf
+	ln -s /usr/share/zoneinfo/Zone/SubZone /etc/localtime
+	hwclock --systohc --utc
+	vim /etc/modules --> Insert two lines "coretemp" "applesmc"
+	echo lapTucnak > /etc/hostname
+	pacman -S dhcpcd
+	systemctl enable dhcpcd
+	passwd
+	pacman -S dosfstools
+	bootctl --path=/boot install
+	vim /boot/loader/entries/arch.conf
+		title Arch Linux
+		linux /vmlinuz-linux
+		initrd /initramfs-linux.img
+		options root=/dev/sda2 rw elevator=deadline quiet splash resume=/dev/sda3 nmi_watchdog=0
+	echo "default arch" > /boot/loader/loader.conf
+	exit
+	reboot
+
+WIFI
+	pacman -S netctl dialog wpa_supplicant networkmanager network-manager-applet networkmanager-openvpn
+	All the above did nothing
+	
+	pacman -S sudo wget base-devel
+	useradd -g wheel -m nil
+	passwd nil
+	sed -i '/%wheel ALL=(ALL) ALL/c\%wheel ALL=(ALL) ALL' /etc/sudoers
+	exit
+	login with nil
+	mkdir ~/yay
+	cd yay
+	wget --no-check-certificate https://aur.archlinux.org/cgit/aur.git/plain/PKGBUILD?h=yay --output-document=./PKGBUILD
+	makepkg -si
+	sudo systemctl disable dhcpcd
+	sudo systemctl enable NetworkManager
+	nmcli dev wifi connect <wifi-name> password <password>
+	
+BSPWM
+	sudo pacman -S bspwm sxhkd xorg-xinit terminus-font xorg-xset xorg-xsetroot dmenu make fontconfig pkg-config gcc compton xorg-server xorg-xrandr
+	mkdir ~/repos
+	cd repos
+	git clone https://github.com/NilVentosa/st.git
+	cd st
+	vim config.mk --> uncomment the compiler line and change it for gcc
+	sudo make install
+	sudo pacman -S xf86-video-intel
+	mkdir .config
+	mkdir .config/bspwm
+	mkdir .config/sxhkd
+	cp /usr/share/doc/bspwm/examples/bspwmrc .config/bspwm
+	cp /usr/share/doc/bspwm/examples/sxhkdrc .config/sxhkd
+	vim .config/sxhkd/sxhkdrc --> change terminal to st
+	vim .xinitrc
+		sxhkd &
+		bspwm
+		setxkbmap es
+	startx
+	
+EXTRAS
+	Install brave
+		git clone https://aur.archlinux.org/brave-bin.git
+		cd brave-bin
+		makepkg -si
+	Sound
+		sudo pacman -S pulseaudio pulseaudio-alsa
+		yay -S alsa-utils
+		sudo vim /etc/modprobe.d/snd_hda_intel.conf
+			# Switch audio output from HDMI to PCH and Enable sound chipset powersaving
+			options snd-hda	intel index=1,0 power_save=1
+		sudo pacman -S playerctl
+		yay -S spotify
+	Brightness
+		sudo pacman -S xorg-xbacklight
+
+    Keyboard brightness
+        sudo pacman -S brightnessctl
+		
+	Suspend on closing lid (does not work)
+		sudo vim /etc/udev/rules.d/90-xhc_sleep.rules
+			# disable wake from S3 on XHC1
+			SUBSYSTEM=="pci", KERNEL=="0000:00:14.0", ATTR{device}=="0x9c31" RUN+="/bin/sh -c '/bin/echo disabled > /sys$env{DEVPATH}/power/wakeup'"
+		
+	Misc
+		sudo pacman -S xorg-xev
+		yay -S polybar
+		sudo pacman -S ttf-inconsolata noto-fonts-emoji
+		sudo pacman -S xclip
+		yay -S libxft
+		
+	to use .profile
+		add to .bash_profile 
+			[[ -f ~/.profile ]] && . ~/.profile
+		
+		
+		
+		
+CONFIG FILES
+	.config/bspwm/bspwmrc
+	.config/sxhkd/sxhkdrc
+	.xinitrc
+	.local/bin
+	
